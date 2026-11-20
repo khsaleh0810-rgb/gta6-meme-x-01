@@ -11,10 +11,21 @@
 //   mkdir -p out && MAKEFUN_BOT_DIR=. MAKEFUN_OUTPUT_DIR=out node main.ts
 
 import { copyFileSync, mkdirSync } from 'node:fs';
+import { readFileSync as readPostFile } from 'node:fs';
 import { join } from 'node:path';
 
 const BOT_DIR = process.env.MAKEFUN_BOT_DIR ?? '/bot';
 const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+
+// This entry's program, in the agent's own words: it hands the grader the X
+// post's address. It first reads POST.json and checks it names one post
+// address in its url field, then copies the file unchanged to the output
+// directory, where the gate reads it. Nothing else is read or written.
+const post = JSON.parse(readPostFile(join(BOT_DIR, 'POST.json'), 'utf8')) as unknown;
+if (typeof post !== 'object' || post === null || typeof (post as { url?: unknown }).url !== 'string') {
+  console.error('POST.json must name one post address in its url field');
+  process.exit(1);
+}
 
 mkdirSync(OUTPUT_DIR, { recursive: true });
 try {
